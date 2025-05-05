@@ -1,0 +1,6 @@
+PROGRAM test;
+VAR x;
+BEGIN
+   IF x > 0
+      x := 1;
+END.

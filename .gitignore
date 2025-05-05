@@ -1,0 +1,15 @@
+# Compiled binary
+pl0compiler
+
+# Object files
+*.o
+
+# Backup files
+*.bak
+*.swp
+*.swo
+
+# Editor and OS-specific files
+*.DS_Store
+Thumbs.db
+*.log
