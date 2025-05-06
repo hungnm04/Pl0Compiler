@@ -19,9 +19,11 @@ extern TokenType Token;
 extern int Num;              
 extern char Id[MAX_IDENT_LEN+1]; //string when Token is ident
 extern char Ch;              // current character
-extern FILE* input;         
+extern FILE* input;    
+extern int currentLine;     
 
 void initLexer(const char* input);
+char getCh();
 void closeLexer();
 TokenType getToken();
 void printToken();

@@ -1,15 +1,19 @@
 #include "lexer.h"
 
-TokenType Token;        
-int Num;                
-char Id[MAX_IDENT_LEN+1]; 
-char Ch;                
-FILE* input; 
+TokenType Token;
+int Num;
+char Id[MAX_IDENT_LEN+1];
+char Ch;
+FILE* input;
+int currentLine = 1; 
 
 char getCh(){
 	Ch = fgetc(input);
+	if (Ch == '\n') {
+	    currentLine++; 
+	}
 	return Ch;
-}          
+}     
 
 const char* getTokenName(TokenType token) {
     static const char* tokenNames[] = {

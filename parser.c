@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "parser.h"
 #include "lexer.h"
 
 void error(const char* message) {
-    fprintf(stderr, "Loi phan tich cu phap: %s. Token hien tai: %s", message, getTokenName(Token));
+    fprintf(stderr, "Loi phan tich cu phap (dong %d): %s. Token hien tai: %s",
+            currentLine,
+            message, getTokenName(Token));
     if (Token == IDENT) fprintf(stderr, " (%s)", Id);
     if (Token == NUMBER) fprintf(stderr, " (%d)", Num);
     fprintf(stderr, "\n");
@@ -22,9 +25,16 @@ void match(TokenType expected) {
     }
 }
 
+void expression();
+
 void factor() {
     if (Token == IDENT) {
         getToken();
+        if (Token == LBRACK) {
+            getToken();
+            expression();
+            match(RBRACK);
+        }
     } else if (Token == NUMBER) {
         getToken();
     } else if (Token == LPARENT) {
@@ -38,7 +48,7 @@ void factor() {
 
 void term() {
     factor();
-    while (Token == TIMES || Token == SLASH) {
+    while (Token == TIMES || Token == SLASH || Token == PERCENT) {
         getToken();
         factor();
     }
@@ -66,19 +76,24 @@ void condition() {
             getToken();
             expression();
         } else {
-            error("Dieu kien loi: Ky vong toan tu quan he (=, <>, <, <=, >, >=) hoac ODD"); // Updated error msg
+            error("Dieu kien loi: Ky vong toan tu quan he (=, <>, <, <=, >, >=) hoac ODD");
         }
     }
 }
 
 void statement() {
     switch (Token) {
-        case IDENT:
+        case IDENT: {
             getToken();
+            if (Token == LBRACK) {
+                getToken();
+                expression();
+                match(RBRACK);
+            }
             match(ASSIGN);
             expression();
             break;
-
+        }
         case CALL:
             getToken();
             match(IDENT);
@@ -94,7 +109,6 @@ void statement() {
                 match(RPARENT);
             }
             break;
-
         case BEGIN:
             getToken();
             statement();
@@ -104,79 +118,101 @@ void statement() {
             }
             match(END);
             break;
-
         case IF:
             getToken();
             condition();
             match(THEN);
             statement();
             if (Token == ELSE) {
-                 getToken();
-                 statement();
+                getToken();
+                statement();
             }
             break;
-
         case WHILE:
             getToken();
             condition();
             match(DO);
             statement();
             break;
-
         case FOR:
-             getToken();
-             match(IDENT);
-             match(ASSIGN);
-             expression();
-             match(TO);
-             expression();
-             match(DO);
-             statement();
-             break;
-
+            getToken();
+            match(IDENT);
+            match(ASSIGN);
+            expression();
+            match(TO);
+            expression();
+            match(DO);
+            statement();
+            break;
         case SEMICOLON:
         case END:
         case ELSE:
         case PERIOD:
-             break;
-
+            break;
         default:
-             error("Bat dau cau lenh khong hop le");
+            error("Bat dau cau lenh khong hop le");
     }
 }
 
 void block() {
     if (Token == CONST) {
-        getToken(); 
-        match(IDENT);   
-        match(EQU);     
-        match(NUMBER);  
-        while (Token == COMMA) { 
-            getToken();  
-            match(IDENT); 
-            match(EQU);  
+        getToken();
+        match(IDENT);
+        match(EQU);
+        match(NUMBER);
+        while (Token == COMMA) {
+            getToken();
+            match(IDENT);
+            match(EQU);
             match(NUMBER);
         }
-        match(SEMICOLON); 
+        match(SEMICOLON);
     }
 
     if (Token == VAR) {
-        getToken(); 
-        match(IDENT); 
-        while (Token == COMMA) { 
-            getToken();  
-            match(IDENT); 
-        }
-        match(SEMICOLON); 
+        getToken();
+        do {
+            match(IDENT);
+            if (Token == LBRACK) {
+                getToken();
+                match(NUMBER);
+                match(RBRACK);
+            }
+            if (Token == COMMA) {
+                getToken();
+                if(Token != IDENT) error("Ky vong dinh danh sau dau phay trong khai bao VAR"); // Added check
+            } else {
+                break;
+            }
+        } while (1); // Loop continues if comma was found and consumed
+        match(SEMICOLON);
     }
 
     while (Token == PROCEDURE) {
-         getToken();      
-         match(IDENT);    
-         match(SEMICOLON);
-         block();         
-         match(SEMICOLON);
-     }
+        getToken();
+        match(IDENT);
+        if (Token == LPARENT) {
+            getToken();
+            if (Token != RPARENT) {
+                if (Token == VAR) {
+                    getToken();
+                }
+                match(IDENT);
+
+                while (Token == COMMA) {
+                    getToken();
+                    if (Token == VAR) {
+                        getToken();
+                    }
+                    match(IDENT);
+                }
+            }
+            match(RPARENT);
+        }
+        match(SEMICOLON);
+        block();
+        match(SEMICOLON);
+    }
 
     statement();
 }
