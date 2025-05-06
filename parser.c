@@ -56,13 +56,18 @@ void expression() {
 }
 
 void condition() {
-    expression();
-    if (Token == EQU || Token == NEQ || Token == LSS ||
-        Token == LEQ || Token == GTR || Token == GEQ) {
+    if (Token == ODD) {
         getToken();
         expression();
     } else {
-        error("Dieu kien loi: Ky vong toan tu quan he (=, <>, <, <=, >, >=)");
+        expression();
+        if (Token == EQU || Token == NEQ || Token == LSS ||
+            Token == LEQ || Token == GTR || Token == GEQ) {
+            getToken();
+            expression();
+        } else {
+            error("Dieu kien loi: Ky vong toan tu quan he (=, <>, <, <=, >, >=) hoac ODD"); // Updated error msg
+        }
     }
 }
 
@@ -142,28 +147,34 @@ void statement() {
 
 void block() {
     if (Token == CONST) {
-        getToken();
-        do {
-            match(IDENT);
-            match(EQU);
+        getToken(); 
+        match(IDENT);   
+        match(EQU);     
+        match(NUMBER);  
+        while (Token == COMMA) { 
+            getToken();  
+            match(IDENT); 
+            match(EQU);  
             match(NUMBER);
-        } while (Token == COMMA);
-        match(SEMICOLON);
+        }
+        match(SEMICOLON); 
     }
 
     if (Token == VAR) {
-        getToken();
-        do {
-            match(IDENT);
-        } while (Token == COMMA);
-        match(SEMICOLON);
+        getToken(); 
+        match(IDENT); 
+        while (Token == COMMA) { 
+            getToken();  
+            match(IDENT); 
+        }
+        match(SEMICOLON); 
     }
 
-     while (Token == PROCEDURE) {
-         getToken();
-         match(IDENT);
+    while (Token == PROCEDURE) {
+         getToken();      
+         match(IDENT);    
          match(SEMICOLON);
-         block();
+         block();         
          match(SEMICOLON);
      }
 

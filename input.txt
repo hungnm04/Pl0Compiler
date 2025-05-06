@@ -1,6 +1,8 @@
-PROGRAM test;
-VAR x;
+PROGRAM testify;
+VAR x, y;
 BEGIN
-   IF x > 0
-      x := 1;
+   x := 5;
+   y := 0;
+   IF x > 0 THEN y := 1;
+   IF x < 0 THEN y := -1 ELSE y := y + 1;
 END.
