@@ -1,5 +1,8 @@
-PROGRAM MismatchedParens;
-VAR x;
+PROGRAM SyntaxProcNoBegin;
+PROCEDURE P;
+  VAR X;
+BEGIN 
+  X := 10;
+END;  
 BEGIN
-  x := (10 + 5 * (2 + 3);
 END.

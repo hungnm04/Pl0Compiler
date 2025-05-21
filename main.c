@@ -2,6 +2,7 @@
 #include <stdlib.h> 
 #include "parser.h" 
 #include "lexer.h" 
+#include "semantic.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -18,10 +19,10 @@ int main(int argc, char* argv[]) {
         closeLexer();
         return 1;    
     }
-
+    
     Program();
 
-   closeLexer();
-	fprintf(stderr, "Phan tich cu phap thanh cong!\n"); 
+   	closeLexer();
+	fprintf(stderr, "Phan tich cu phap va ngu nghia thanh cong!\n"); 
 	return 0; 
 }
