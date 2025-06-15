@@ -1,0 +1,7 @@
+PROGRAM TestFor;
+VAR i;
+BEGIN
+    FOR i := 1 TO 5 DO
+        CALL WRITEI(i);
+    CALL WRITELN;
+END.

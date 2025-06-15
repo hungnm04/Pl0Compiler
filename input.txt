@@ -1,8 +1,19 @@
-PROGRAM SyntaxProcNoBegin;
-PROCEDURE P;
-  VAR X;
-BEGIN 
-  X := 10;
-END;  
+PROGRAM GCDTest;
+VAR a, b;
+PROCEDURE gcd;
 BEGIN
+    WHILE a <> b DO
+    BEGIN
+        IF a > b THEN
+            a := a - b
+        ELSE
+            b := b - a;
+    END;
+END;
+BEGIN
+    a := 54;
+    b := 24;
+    CALL gcd;
+    CALL WRITEI(a);
+    CALL WRITELN;
 END.

@@ -4,8 +4,13 @@
 #include "semantic.h"
 #include "lexer.h"
 
-static Scope* currentScope = NULL;
-static int currentLevel = 0;
+Scope* currentScope = NULL;
+int currentLevel = 0;
+
+void semanticError(const char* message) {
+    printf("Loi ngu nghia (dong %d): %s\n", currentLine, message);
+    exit(1);
+}
 
 void initSymbolTable() {
     currentScope = (Scope*)malloc(sizeof(Scope));
@@ -77,10 +82,9 @@ void enterScope(const char* procName) {
 }
 
 
-static void addSymbol(const char* name, SymbolType type) {
+static void addSymbol(const char* name, SymbolType type, int address) {
     if (isDeclaredInCurrentScope(name)) {
-        fprintf(stderr, "Loi: Dinh danh '%s' da duoc khai bao truoc do trong cung pham vi (dong %d).\n", name, currentLine);
-        exit(1);
+        semanticError("Dinh danh da duoc khai bao truoc do trong cung pham vi");
     }
 
     SymbolNode* newSymbol = (SymbolNode*)malloc(sizeof(SymbolNode));
@@ -93,6 +97,7 @@ static void addSymbol(const char* name, SymbolType type) {
     newSymbol->name[MAX_IDENT_LEN] = '\0';
     newSymbol->type = type;
     newSymbol->level = currentLevel;
+    newSymbol->address = address;
 
     if (type == SYM_PROCEDURE) {
         newSymbol->info.proc.params = NULL;
@@ -103,62 +108,51 @@ static void addSymbol(const char* name, SymbolType type) {
         newSymbol->info.array.size = 0;
     }
 
-
     newSymbol->next = currentScope->symbols;
     currentScope->symbols = newSymbol;
 }
 
 
 void addConstant(const char* name, int value) {
-    addSymbol(name, SYM_CONST);
+    addSymbol(name, SYM_CONST, 0);
     if (currentScope->symbols) {
         currentScope->symbols->info.value = value;
     }
 }
 
-
-void addVariable(const char* name) {
-    addSymbol(name, SYM_VAR);
+void addVariable(const char* name, int level, int* address) {
+    addSymbol(name, SYM_VAR, *address);
+    (*address)++;
 }
 
-
-void addArray(const char* name, int size) {
+void addArray(const char* name, int size, int level, int* address) {
     if (size <= 0) {
-        fprintf(stderr, "Loi ngu nghia (dong %d): Kich thuoc mang '%s' phai la so nguyen duong.\n", currentLine, name);
-        exit(1);
+        semanticError("Kich thuoc mang phai la so nguyen duong");
     }
-    addSymbol(name, SYM_ARRAY);
+    addSymbol(name, SYM_ARRAY, *address);
     if (currentScope->symbols) {
         currentScope->symbols->info.array.size = size;
     }
+    (*address) += size;
+}
+
+SymbolNode* addProcedure(const char* name, int level, int address) {
+    addSymbol(name, SYM_PROCEDURE, address);
+    return currentScope->symbols;
 }
 
 
-void addProcedure(const char* name) {
-    addSymbol(name, SYM_PROCEDURE);
-}
-
-
-void addParameter(const char* procName, const char* paramName, int isVar) {
-    SymbolNode* proc = NULL;
-    if (currentScope && currentScope->parent) {
-        SymbolNode* s = currentScope->parent->symbols;
-        while(s) {
-            if (s->type == SYM_PROCEDURE && strcmp(s->name, procName) == 0) {
-                proc = s;
-                break;
-            }
-            s = s->next;
-        }
-    }
-    if (!proc) proc = findSymbol(procName);
-
-
-    if (proc == NULL || proc->type != SYM_PROCEDURE) {
-        fprintf(stderr, "Loi: Khong tim thay dinh nghia thu tuc '%s' de them tham so (dong %d).\n", procName, currentLine);
-        exit(1);
+void addParameter(SymbolNode* procSymbol, const char* paramName, int isVar, int level, int* address) {
+    if (!procSymbol || procSymbol->type != SYM_PROCEDURE) {
+        semanticError("Khong tim thay dinh nghia thu tuc de them tham so");
     }
 
+    // Add parameter as symbol in current scope
+    SymbolType paramType = isVar ? SYM_PARAM_VAR : SYM_PARAM_VAL;
+    addSymbol(paramName, paramType, *address);
+    (*address)++;
+
+    // Add to procedure's parameter list
     ParamNode* newParam = (ParamNode*)malloc(sizeof(ParamNode));
     if (!newParam) {
         fprintf(stderr, "Loi: Khong the cap phat bo nho cho tham so moi.\n");
@@ -170,16 +164,16 @@ void addParameter(const char* procName, const char* paramName, int isVar) {
     newParam->isVar = isVar;
     newParam->next = NULL;
 
-    if (proc->info.proc.params == NULL) {
-        proc->info.proc.params = newParam;
+    if (procSymbol->info.proc.params == NULL) {
+        procSymbol->info.proc.params = newParam;
     } else {
-        ParamNode* param = proc->info.proc.params;
+        ParamNode* param = procSymbol->info.proc.params;
         while (param->next != NULL) {
             param = param->next;
         }
         param->next = newParam;
     }
-    proc->info.proc.paramCount++;
+    procSymbol->info.proc.paramCount++;
 }
 
 
@@ -223,7 +217,9 @@ const char* getSymbolTypeName(SymbolType type) {
         case SYM_VAR: return "Variable";
         case SYM_ARRAY: return "Array";
         case SYM_PROCEDURE: return "Procedure";
-        default: return "UnknownType";
+        case SYM_PARAM_VAL: return "Param(Val)";
+        case SYM_PARAM_VAR: return "Param(Var)";
+        default: return "Unknown";
     }
 }
 
@@ -238,8 +234,8 @@ void printSymbolTable() {
             printf("  (No symbols in this scope)\n");
         }
         while (sym != NULL) {
-            printf("  Name: %-15s | Type: %-10s | Level: %d",
-                   sym->name, getSymbolTypeName(sym->type), sym->level);
+            printf("  Name: %-15s | Type: %-10s | Level: %d | Address: %d",
+                   sym->name, getSymbolTypeName(sym->type), sym->level, sym->address);
             if (sym->type == SYM_CONST) {
                 printf(" | Value: %d", sym->info.value);
             } else if (sym->type == SYM_ARRAY) {

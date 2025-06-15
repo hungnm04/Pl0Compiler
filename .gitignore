@@ -1,8 +1,10 @@
 # Compiled binary
 pl0compiler
+*.exe
 
 # Object files
 *.o
+*.gch
 
 # Backup files
 *.bak
@@ -13,3 +15,12 @@ pl0compiler
 *.DS_Store
 Thumbs.db
 *.log
+
+# Test files
+*.pl0
+test_*.pl0
+test_error_*.pl0
+run_tests.*
+pl0compiler.exe
+test_all.bat
+test_suite.bat

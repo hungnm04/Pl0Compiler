@@ -1,28 +1,34 @@
-#include <stdio.h>  
-#include <stdlib.h> 
-#include "parser.h" 
-#include "lexer.h" 
+#include <stdio.h>
+#include <stdlib.h>
+#include "parser.h"
+#include "lexer.h"
 #include "semantic.h"
+#include "codegen.h"
+#include "vm.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s <input_filename>\n", argv[0]);
-        return 1; 
+        printf("Cach dung: %s <ten_file_dau_vao>\n", argv[0]);
+        return 1;
     }
     const char *filename = argv[1];
 
     initLexer(filename);
-    getToken(); 
+    getToken();
 
     if (Token == NONE) {
-        fprintf(stderr, "Loi: File '%s' rong hoac token dau tien khong hop le.\n", filename);
+        printf("Loi: File '%s' rong hoac token dau tien khong hop le.\n", filename);
         closeLexer();
-        return 1;    
+        return 1;
     }
-    
+
     Program();
 
+    printf("Bien dich thanh cong!\n");
+    printCode();
+    execute();
+
+    freeSymbolTable();
    	closeLexer();
-	fprintf(stderr, "Phan tich cu phap va ngu nghia thanh cong!\n"); 
-	return 0; 
+	return 0;
 }

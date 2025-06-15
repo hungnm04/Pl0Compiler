@@ -3,15 +3,21 @@
 
 #include "lexer.h"
 #include "semantic.h"
+#include "codegen.h"
+
+typedef struct {
+    int isConstant;
+    int value;
+} ExpressionResult;
 
 void Program();
-void block(const char* currentProcedureName);
+void block();
 void statement();
+void condition();
 
-SymbolType condition();
-SymbolType expression();
-SymbolType term();
-SymbolType factor();
+ExpressionResult expression();
+ExpressionResult term();
+ExpressionResult factor();
 
 void error(const char *message);
 
